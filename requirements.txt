@@ -1,0 +1,5 @@
+marvin==2.3.7
+Pillow==10.4.0
+pydantic==2.9.2
+pync==2.0.3
+pynput==1.7.7
