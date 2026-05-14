@@ -1,68 +1,147 @@
-import io
-from typing import List
-import marvin
-import pynput
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "dspy>=3.2.1",
+#     "pillow>=10.4.0",
+#     "pydantic>=2.9.2",
+#     "pync>=2.0.3",
+#     "pynput>=1.7.7",
+# ]
+# ///
+
+import os
+
+import dspy
+from dspy.adapters.baml_adapter import BAMLAdapter
 from PIL import ImageGrab
-import pydantic
+from pydantic import BaseModel, Field, model_validator
+from pynput import keyboard
 import pync
 
-class MultipleChoiceResponse(pydantic.BaseModel):
-    """
-    Model containing the explanation of the question, reasoning behind the answer, and the answer itself.
-    """
 
-    explanation_of_question: str = pydantic.Field(
-        ..., description="Explanation of the test question."
+MODEL_NAME = "openai/gpt-5.4-mini"
+REASONING_EFFORT = "low"
+VERBOSITY = "low"
+
+
+class MultipleChoiceResponse(BaseModel):
+    """Structured answer for a visible multiple-choice question."""
+
+    explanation_of_question: str = Field(
+        description="Brief explanation of what the question is asking."
     )
-    reasoning: str = pydantic.Field(..., description="Reasoning behind the answer.")
-    is_single_answer: bool = pydantic.Field(
-        ..., description="True if the question requires a single answer."
+    reasoning: str = Field(description="Concise reasoning behind the selected answer.")
+    is_single_answer: bool = Field(
+        description="True when the question requires exactly one selected option."
     )
-    is_multiple_answer: bool = pydantic.Field(
-        ..., description="True if multiple answers are allowed."
+    is_multiple_answer: bool = Field(
+        description="True when the question allows more than one selected option."
     )
-    answer: list[int] = pydantic.Field(
-        ...,
-        description="Answer(s) to the question, depending on its requirements. The number of checkboxes may vary. If the question requires selecting a single checkbox, provide a single value (e.g., [3]). If the question allows selecting multiple checkboxes, provide a list of the selected values (e.g., [2, 4, 5]).",
+    answer: list[int] = Field(
+        description=(
+            "One-based option number or numbers to select. "
+            "Use [3] for the third option, or [2, 4] for multiple choices."
+        )
     )
 
-    @pydantic.model_validator(mode="after")
-    def validate_answer_conditions(self):
-        self.answer = sorted(self.answer)
-        if self.is_single_answer:
-            if len(self.answer) != 1:
-                raise ValueError("If 'is_single_answer' is True, 'answer' must contain exactly one item.")
-            if self.is_multiple_answer:
-                raise ValueError("'is_multiple_answer' must be False when 'is_single_answer' is True.")
+    @model_validator(mode="after")
+    def validate_answer(self):
+        self.answer = sorted(set(self.answer))
+
+        if self.is_single_answer == self.is_multiple_answer:
+            raise ValueError("Exactly one answer mode must be true.")
+
+        if self.is_single_answer and len(self.answer) != 1:
+            raise ValueError("Single-answer questions must return exactly one option.")
+
+        if not self.answer:
+            raise ValueError("At least one answer option is required.")
+
         return self
 
-def get_multiple_choice_response(image) -> MultipleChoiceResponse:
-    img_bytes = io.BytesIO()
-    image.save(img_bytes, format="PNG")
-    img = marvin.Image(data=img_bytes.getvalue())
-    return marvin.cast(img, target=MultipleChoiceResponse)
 
-def notify(message: str, title: str = "Gorilla Test 🦍"):
+QUESTION_INSTRUCTIONS = """
+Analyze the screenshot of a multiple-choice assessment question.
+
+Return the answer using one-based option numbers in the order the options appear on
+screen. Decide whether the UI asks for one answer or multiple answers. Keep the
+explanation and reasoning short.
+"""
+
+
+class MultipleChoiceSignature(dspy.Signature):
+    screenshot: dspy.Image = dspy.InputField(
+        desc="Screenshot containing the assessment question and visible answer options."
+    )
+    result: MultipleChoiceResponse = dspy.OutputField(
+        desc="Structured answer for the visible question."
+    )
+
+
+MultipleChoiceSignature = MultipleChoiceSignature.with_instructions(
+    QUESTION_INSTRUCTIONS
+)
+answer_question = dspy.Predict(MultipleChoiceSignature)
+
+
+def configure_dspy() -> None:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Set OPENAI_API_KEY before running the assistant.")
+
+    lm = dspy.LM(
+        MODEL_NAME,
+        temperature=1.0,
+        max_tokens=4096,
+        reasoning_effort=REASONING_EFFORT,
+        verbosity=VERBOSITY,
+        allowed_openai_params=["reasoning_effort", "verbosity"],
+        api_key=api_key,
+    )
+
+    dspy.configure(lm=lm, adapter=BAMLAdapter())
+    dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=False)
+
+
+def get_multiple_choice_response(image) -> MultipleChoiceResponse:
+    prediction = answer_question(screenshot=dspy.Image(image))
+    return prediction.result
+
+
+def notify(message: str, title: str = "Gorilla Test Assistant") -> None:
     pync.Notifier.notify(message, title=title)
 
-def on_press(key):
-    if key == pynput.keyboard.Key.alt_l:
-        notify("Processing question... 🤔")
-        try:
-            image = ImageGrab.grab()
-            response = get_multiple_choice_response(image)
-            print(response)
-            answer = response.answer[0] if response.is_single_answer else ", ".join(map(str, response.answer))
-            notify(f"Answer: {answer}")
-        except Exception as e:
-            print(f"Error: {e}")
-            notify("An error occurred")
 
-def main():
-    print("Listening for keypresses...")
+def format_answer(response: MultipleChoiceResponse) -> str:
+    if response.is_single_answer:
+        return str(response.answer[0])
+
+    return ", ".join(str(option) for option in response.answer)
+
+
+def on_press(key) -> None:
+    if key != keyboard.Key.alt_l:
+        return
+
+    notify("Processing question...")
+
+    try:
+        response = get_multiple_choice_response(ImageGrab.grab())
+        print(response.model_dump_json(indent=2))
+        notify(f"Answer: {format_answer(response)}")
+    except Exception as exc:
+        print(f"Error: {exc}")
+        notify("An error occurred")
+
+
+def main() -> None:
+    configure_dspy()
+    print("Listening for left Alt keypresses...")
     notify("Script started")
-    with pynput.keyboard.Listener(on_press=on_press) as listener:
+
+    with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
+
 
 if __name__ == "__main__":
     main()

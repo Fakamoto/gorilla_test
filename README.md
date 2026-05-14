@@ -1,58 +1,59 @@
 # Gorilla Test Assistant 🦍
 
-This project provides an automated assistant for TestGorilla assessments, demonstrating the potential limitations of traditional multiple-choice testing in the age of AI. This tool is specifically designed for macOS users.
+This project is a small macOS proof of concept for screenshot-based multiple-choice analysis. It was built to show how traditional assessment formats can break down in the age of multimodal AI.
 
 ## Background
 
-For context on why this project was created, check out the blog post: [Pass any TestGorilla Assessment 🦍](https://your-blog-url-here.com)
+For context on why this project was created, read the blog post: [Pass any TestGorilla Assessment 🦍](https://blog.fgoiriz.com/posts/testgorilla/).
 
 ## Features
 
-- Captures screen content on keypress using Pillow (PIL)
-- Analyzes multiple-choice questions using GPT-4 Vision via the Marvin library
-- Provides discreet answer notifications using pync
-- Monitors keyboard input with pynput
+- Captures the screen on a left Alt keypress
+- Analyzes visible multiple-choice questions with DSPy and `gpt-5.4-mini`
+- Returns structured answers with concise reasoning
+- Sends macOS notifications with `pync`
+- Uses inline `uv` script dependencies in `main.py`
 
 ## Setup
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/your-username/gorilla-test-assistant.git
-   cd gorilla-test-assistant
+1. Install `uv`.
+
+   On macOS, Homebrew is the simplest option:
+
+   ```bash
+   brew install uv
    ```
 
-2. Install dependencies:
-   ```
-   pip install -r requirements.txt
+2. Clone the repository:
+
+   ```bash
+   git clone git@github.com:Fakamoto/gorilla_test.git
+   cd gorilla_test
    ```
 
-3. Ensure you have a valid OpenAI API key and set it as an environment variable:
-   ```
-   export OPENAI_API_KEY='your-api-key-here'
+3. Set your OpenAI API key:
+
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
    ```
 
 ## Usage
 
-1. Run the script:
-   ```
-   python main.py
-   ```
+Run the script with `uv`:
 
-2. When you encounter a multiple-choice question:
-   - Press the left Alt key
-   - Wait for the notification with the suggested answer
+```bash
+uv run main.py
+```
 
-## Important Notes
+When a multiple-choice question is visible, press the left Alt key and wait for the notification with the suggested answer.
 
-- This tool is for educational and demonstration purposes only.
-- Use responsibly and ethically.
-- Be aware of the terms of service for any platforms you're using.
-- This tool is designed specifically for macOS and may not work on other operating systems.
+## Notes
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- This is designed for macOS.
+- `uv` reads the dependencies directly from `main.py`, so there is no `requirements.txt`.
+- The model is configured in `main.py` as `openai/gpt-5.4-mini`.
+- Use responsibly and respect the terms of service for any platform involved.
 
 ## Disclaimer
 
-This project is meant to highlight the need for more advanced and relevant assessment methods in tech hiring. It should not be used to gain unfair advantages in actual assessments. It is specifically designed for macOS users and may not function on other operating systems.
+This project is meant to highlight the need for more advanced and relevant assessment methods in tech hiring. It should not be used to gain unfair advantages in actual assessments.
