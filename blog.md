@@ -4,7 +4,7 @@
 
 These last days, I've been invited to many TestGorilla Assessments for the Python Developer positions I've been applying for.
 
-![TestGorilla Logo](https://raw.githubusercontent.com/Fakamoto/blog/main/docs/posts/media/testgorilla_logo.png)
+![TestGorilla Logo](assets/testgorilla-logo.png)
 
 It was a bit annoying when, after being invited to complete an assessment at TestGorilla for a Python AI Developer role I applied for—where the job description emphasized:
 
@@ -14,9 +14,9 @@ I realized the test was focused on Machine Learning rather than Applied AI… Bu
 
 One of the first questions was the following:
 
-![First Question](https://raw.githubusercontent.com/Fakamoto/blog/main/docs/posts/media/testgorilla_question1.png)
+![First Question](assets/testgorilla-question-1.png)
 
-![First Answer](https://raw.githubusercontent.com/Fakamoto/blog/main/docs/posts/media/testgorilla_answer1.png)
+![First Answer](assets/testgorilla-answer-1.png)
 
 The question wasn't related to the technologies or tools I work with, nor did it have anything to do with the job description. It was a poor choice of questions because they assumed Machine Learning and Applied AI with LLMs are the same, but they are actually very different fields.
 

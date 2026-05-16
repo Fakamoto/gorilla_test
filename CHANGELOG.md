@@ -18,3 +18,5 @@
   provider environment variable resolution.
 - Clarified `--model` wording as an LLM model name in LiteLLM format.
 - Added a README image showing the left Mac `option` / `alt` key.
+- Copied the article images into this repo and changed `blog.md` to use local
+  asset paths.
