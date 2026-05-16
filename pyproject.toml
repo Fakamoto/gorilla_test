@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gorilla-test-assistant"
+version = "0.1.0"
+description = "Screenshot-based multiple-choice assistant for macOS."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "dspy>=3.2.1",
+    "pillow>=10.4.0",
+    "pydantic>=2.9.2",
+    "pync>=2.0.3",
+    "pynput>=1.7.7",
+    "typer>=0.21.0",
+]
+
+[project.scripts]
+gorilla-test = "gorilla_test:main"
+
+[project.urls]
+Homepage = "https://github.com/Fakamoto/gorilla_test"
+Repository = "https://github.com/Fakamoto/gorilla_test"
+
+[tool.setuptools]
+py-modules = ["gorilla_test"]

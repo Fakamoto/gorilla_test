@@ -1,15 +1,5 @@
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#     "dspy>=3.2.1",
-#     "pillow>=10.4.0",
-#     "pydantic>=2.9.2",
-#     "pync>=2.0.3",
-#     "pynput>=1.7.7",
-# ]
-# ///
-
 import os
+from typing import Final
 
 import dspy
 from dspy.adapters.baml_adapter import BAMLAdapter
@@ -17,12 +7,13 @@ from PIL import ImageGrab
 from pydantic import BaseModel, Field, model_validator
 from pynput import keyboard
 import pync
+import typer
 
 
-MODEL_NAME = "openai/gpt-5.4-mini"
-REASONING_EFFORT = "low"
-VERBOSITY = "low"
-
+APP_NAME: Final = "Gorilla Test Assistant"
+MODEL_NAME: Final = "openai/gpt-5.4-mini"
+REASONING_EFFORT: Final = "low"
+VERBOSITY: Final = "low"
 
 class MultipleChoiceResponse(BaseModel):
     """Structured answer for a visible multiple-choice question."""
@@ -108,7 +99,7 @@ def get_multiple_choice_response(image) -> MultipleChoiceResponse:
     return prediction.result
 
 
-def notify(message: str, title: str = "Gorilla Test Assistant") -> None:
+def notify(message: str, title: str = APP_NAME) -> None:
     pync.Notifier.notify(message, title=title)
 
 
@@ -134,13 +125,18 @@ def on_press(key) -> None:
         notify("An error occurred")
 
 
-def main() -> None:
+def run() -> None:
+    """Analyze visible multiple-choice questions from a macOS screenshot."""
     configure_dspy()
     print("Listening for left Alt keypresses...")
-    notify("Script started")
+    notify("CLI started")
 
     with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
+
+
+def main() -> None:
+    typer.run(run)
 
 
 if __name__ == "__main__":
