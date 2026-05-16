@@ -97,18 +97,14 @@ class MultipleChoiceResult:
     reasoning: str
 
 
-def get_model_provider(model: str) -> str:
-    if "/" not in model:
-        return "openai"
-
-    return model.split("/", maxsplit=1)[0].lower()
-
-
 def get_api_key_env_names(model: str, api_key_env: str | None) -> tuple[str, ...]:
     if api_key_env:
         return (api_key_env,)
 
-    provider = get_model_provider(model)
+    if "/" not in model:
+        return ()
+
+    provider = model.split("/", maxsplit=1)[0].lower()
     return API_KEY_ENV_BY_PROVIDER.get(provider, ())
 
 

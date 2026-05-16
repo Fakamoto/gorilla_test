@@ -35,8 +35,13 @@ The default model is `openai/gpt-5.4-mini`, so the default setup is:
 export OPENAI_API_KEY="your-api-key"
 ```
 
-The CLI accepts any DSPy/LiteLLM-style model name through `--model`. For common
-providers, set the standard provider environment variable:
+The CLI accepts any DSPy/LiteLLM-style model name through `--model`. Provider
+prefixes like `openai/`, `anthropic/`, and `groq/` are passed through as-is. If
+you use an unprefixed model name, the CLI does not rewrite it or assume a
+provider.
+
+For common provider-prefixed models, set the standard provider environment
+variable:
 
 | Provider prefix | Environment variable |
 | --- | --- |
@@ -54,6 +59,9 @@ For another provider, point the CLI at the variable name:
 ```bash
 gorilla-test --model provider/model-name --api-key-env PROVIDER_API_KEY
 ```
+
+For unprefixed model names, use the environment variables expected by
+DSPy/LiteLLM for that model.
 
 ## Usage
 

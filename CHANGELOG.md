@@ -12,3 +12,5 @@
   and PyPI publishing.
 - Added the original TestGorilla background article as `blog.md` and linked it
   from the README.
+- Stopped assuming slashless model names use OpenAI; those names are now passed
+  through to DSPy/LiteLLM unchanged.
