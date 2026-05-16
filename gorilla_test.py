@@ -1,9 +1,11 @@
+import json
 import os
-from typing import Annotated, Any, Final
+from dataclasses import dataclass
+from typing import Annotated, Any, Final, Self
 
 import dspy
 from dspy.adapters.baml_adapter import BAMLAdapter
-from PIL import ImageGrab
+from PIL import Image, ImageGrab
 from pydantic import BaseModel, Field, model_validator
 from pynput import keyboard
 import pync
@@ -30,13 +32,12 @@ API_KEY_ENV_BY_PROVIDER: Final[dict[str, tuple[str, ...]]] = {
 }
 
 
-class MultipleChoiceResponse(BaseModel):
+class MultipleChoiceAnswer(BaseModel):
     """Structured answer for a visible multiple-choice question."""
 
     explanation_of_question: str = Field(
         description="Brief explanation of what the question is asking."
     )
-    reasoning: str = Field(description="Concise reasoning behind the selected answer.")
     is_single_answer: bool = Field(
         description="True when the question requires exactly one selected option."
     )
@@ -51,7 +52,7 @@ class MultipleChoiceResponse(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_answer(self):
+    def validate_answer(self) -> Self:
         self.answer = sorted(set(self.answer))
 
         if self.is_single_answer == self.is_multiple_answer:
@@ -71,7 +72,7 @@ Analyze the screenshot of a multiple-choice assessment question.
 
 Return the answer using one-based option numbers in the order the options appear on
 screen. Decide whether the UI asks for one answer or multiple answers. Keep the
-explanation and reasoning short.
+explanation short. Chain-of-thought reasoning is handled by DSPy separately.
 """
 
 
@@ -79,7 +80,7 @@ class MultipleChoiceSignature(dspy.Signature):
     screenshot: dspy.Image = dspy.InputField(
         desc="Screenshot containing the assessment question and visible answer options."
     )
-    result: MultipleChoiceResponse = dspy.OutputField(
+    result: MultipleChoiceAnswer = dspy.OutputField(
         desc="Structured answer for the visible question."
     )
 
@@ -87,7 +88,13 @@ class MultipleChoiceSignature(dspy.Signature):
 MultipleChoiceSignature = MultipleChoiceSignature.with_instructions(
     QUESTION_INSTRUCTIONS
 )
-answer_question = dspy.Predict(MultipleChoiceSignature)
+answer_question = dspy.ChainOfThought(MultipleChoiceSignature)
+
+
+@dataclass(frozen=True)
+class MultipleChoiceResult:
+    answer: MultipleChoiceAnswer
+    reasoning: str
 
 
 def get_model_provider(model: str) -> str:
@@ -149,32 +156,44 @@ def configure_dspy(
     dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=False)
 
 
-def get_multiple_choice_response(image) -> MultipleChoiceResponse:
-    prediction = answer_question(screenshot=dspy.Image(image))
-    return prediction.result
+def get_multiple_choice_response(image: Image.Image) -> MultipleChoiceResult:
+    prediction: Any = answer_question(screenshot=dspy.Image(image))
+    answer = MultipleChoiceAnswer.model_validate(prediction.result)
+    reasoning = str(getattr(prediction, "reasoning", "")).strip()
+
+    return MultipleChoiceResult(answer=answer, reasoning=reasoning)
 
 
 def notify(message: str, title: str = APP_NAME) -> None:
     pync.Notifier.notify(message, title=title)
 
 
-def format_answer(response: MultipleChoiceResponse) -> str:
+def format_answer(response: MultipleChoiceAnswer) -> str:
     if response.is_single_answer:
         return str(response.answer[0])
 
     return ", ".join(str(option) for option in response.answer)
 
 
-def on_press(key) -> None:
+def format_result(result: MultipleChoiceResult) -> str:
+    payload: dict[str, Any] = result.answer.model_dump()
+
+    if result.reasoning:
+        payload["reasoning"] = result.reasoning
+
+    return json.dumps(payload, indent=2)
+
+
+def on_press(key: keyboard.Key | keyboard.KeyCode | None) -> None:
     if key != keyboard.Key.alt_l:
         return
 
     notify("Processing question...")
 
     try:
-        response = get_multiple_choice_response(ImageGrab.grab())
-        print(response.model_dump_json(indent=2))
-        notify(f"Answer: {format_answer(response)}")
+        result = get_multiple_choice_response(ImageGrab.grab())
+        print(format_result(result))
+        notify(f"Answer: {format_answer(result.answer)}")
     except Exception as exc:
         print(f"Error: {exc}")
         notify("An error occurred")
