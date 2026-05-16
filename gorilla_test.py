@@ -213,6 +213,7 @@ def run(
         typer.Option(
             "--max-tokens",
             min=1,
+            show_default=True,
             help="Maximum output tokens requested from the model.",
         ),
     ] = DEFAULT_MAX_TOKENS,
