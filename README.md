@@ -75,6 +75,10 @@ When a multiple-choice question is visible, press the left Alt key. The CLI
 prints the structured answer and sends a macOS notification with the selected
 option number.
 
+On a Mac keyboard, the left Alt key is the left `option` / `alt` key:
+
+![Mac keyboard with the left option alt key circled](assets/left-alt-key.png)
+
 Choose a different model:
 
 ```bash

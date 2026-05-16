@@ -17,3 +17,4 @@
 - Added unit tests for prediction parsing, reasoning extraction, and model
   provider environment variable resolution.
 - Clarified `--model` wording as an LLM model name in LiteLLM format.
+- Added a README image showing the left Mac `option` / `alt` key.
