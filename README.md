@@ -4,8 +4,8 @@ Small macOS CLI that listens for a left Alt keypress, captures the current
 screen, and asks a multimodal DSPy program to answer the visible multiple-choice
 question.
 
-For background on why this project exists, read
-[Pass any TestGorilla Assessment](https://blog.fgoiriz.com/posts/testgorilla/).
+For background on why this project exists, read the included article:
+[Pass any TestGorilla Assessment](blog.md).
 
 ## Install
 

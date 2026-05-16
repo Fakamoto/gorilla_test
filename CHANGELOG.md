@@ -10,3 +10,5 @@
 - Increased the default max token budget from `4096` to `8192`.
 - Documented `uv` and `pip` installation, provider API key environment variables,
   and PyPI publishing.
+- Added the original TestGorilla background article as `blog.md` and linked it
+  from the README.
