@@ -205,7 +205,7 @@ def run(
         typer.Option(
             "--model",
             "-m",
-            help="DSPy/LiteLLM model name, such as openai/gpt-5.4-mini.",
+            help="LLM model name in LiteLLM format, such as openai/gpt-5.4-mini.",
         ),
     ] = DEFAULT_MODEL,
     max_tokens: Annotated[
