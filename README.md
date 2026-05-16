@@ -101,6 +101,12 @@ Run the CLI from this checkout without installing it globally:
 uv run --python 3.11.6 --with . gorilla-test --help
 ```
 
+Run the tests:
+
+```bash
+uv run --python 3.11.6 --with . python -m unittest -v
+```
+
 Build the package:
 
 ```bash

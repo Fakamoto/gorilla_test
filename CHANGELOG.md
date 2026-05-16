@@ -14,3 +14,5 @@
   from the README.
 - Stopped assuming slashless model names use OpenAI; those names are now passed
   through to DSPy/LiteLLM unchanged.
+- Added unit tests for prediction parsing, reasoning extraction, and model
+  provider environment variable resolution.

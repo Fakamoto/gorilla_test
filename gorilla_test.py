@@ -152,12 +152,16 @@ def configure_dspy(
     dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=False)
 
 
-def get_multiple_choice_response(image: Image.Image) -> MultipleChoiceResult:
-    prediction: Any = answer_question(screenshot=dspy.Image(image))
+def parse_prediction(prediction: Any) -> MultipleChoiceResult:
     answer = MultipleChoiceAnswer.model_validate(prediction.result)
     reasoning = str(getattr(prediction, "reasoning", "")).strip()
 
     return MultipleChoiceResult(answer=answer, reasoning=reasoning)
+
+
+def get_multiple_choice_response(image: Image.Image) -> MultipleChoiceResult:
+    prediction: Any = answer_question(screenshot=dspy.Image(image))
+    return parse_prediction(prediction)
 
 
 def notify(message: str, title: str = APP_NAME) -> None:
