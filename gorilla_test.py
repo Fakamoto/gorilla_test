@@ -1,5 +1,5 @@
 import os
-from typing import Final
+from typing import Annotated, Any, Final
 
 import dspy
 from dspy.adapters.baml_adapter import BAMLAdapter
@@ -11,9 +11,24 @@ import typer
 
 
 APP_NAME: Final = "Gorilla Test Assistant"
-MODEL_NAME: Final = "openai/gpt-5.4-mini"
+DEFAULT_MODEL: Final = "openai/gpt-5.4-mini"
+DEFAULT_MAX_TOKENS: Final = 4096
 REASONING_EFFORT: Final = "low"
 VERBOSITY: Final = "low"
+
+API_KEY_ENV_BY_PROVIDER: Final[dict[str, tuple[str, ...]]] = {
+    "anthropic": ("ANTHROPIC_API_KEY",),
+    "deepseek": ("DEEPSEEK_API_KEY",),
+    "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
+    "google": ("GOOGLE_API_KEY", "GEMINI_API_KEY"),
+    "groq": ("GROQ_API_KEY",),
+    "mistral": ("MISTRAL_API_KEY",),
+    "openai": ("OPENAI_API_KEY",),
+    "openrouter": ("OPENROUTER_API_KEY",),
+    "together": ("TOGETHER_API_KEY",),
+    "xai": ("XAI_API_KEY",),
+}
+
 
 class MultipleChoiceResponse(BaseModel):
     """Structured answer for a visible multiple-choice question."""
@@ -75,19 +90,59 @@ MultipleChoiceSignature = MultipleChoiceSignature.with_instructions(
 answer_question = dspy.Predict(MultipleChoiceSignature)
 
 
-def configure_dspy() -> None:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("Set OPENAI_API_KEY before running the assistant.")
+def get_model_provider(model: str) -> str:
+    if "/" not in model:
+        return "openai"
+
+    return model.split("/", maxsplit=1)[0].lower()
+
+
+def get_api_key_env_names(model: str, api_key_env: str | None) -> tuple[str, ...]:
+    if api_key_env:
+        return (api_key_env,)
+
+    provider = get_model_provider(model)
+    return API_KEY_ENV_BY_PROVIDER.get(provider, ())
+
+
+def resolve_api_key(model: str, api_key_env: str | None) -> str | None:
+    env_names = get_api_key_env_names(model, api_key_env)
+
+    for env_name in env_names:
+        api_key = os.getenv(env_name)
+        if api_key:
+            return api_key
+
+    if env_names:
+        expected_env = " or ".join(env_names)
+        raise RuntimeError(
+            f"Set {expected_env} before running the assistant, "
+            "or pass --api-key-env with the environment variable to use."
+        )
+
+    return None
+
+
+def configure_dspy(
+    model: str,
+    max_tokens: int,
+    api_key_env: str | None,
+) -> None:
+    api_key = resolve_api_key(model, api_key_env)
+    lm_kwargs: dict[str, Any] = {
+        "temperature": 1.0,
+        "max_tokens": max_tokens,
+        "reasoning_effort": REASONING_EFFORT,
+        "verbosity": VERBOSITY,
+        "allowed_openai_params": ["reasoning_effort", "verbosity"],
+    }
+
+    if api_key is not None:
+        lm_kwargs["api_key"] = api_key
 
     lm = dspy.LM(
-        MODEL_NAME,
-        temperature=1.0,
-        max_tokens=4096,
-        reasoning_effort=REASONING_EFFORT,
-        verbosity=VERBOSITY,
-        allowed_openai_params=["reasoning_effort", "verbosity"],
-        api_key=api_key,
+        model,
+        **lm_kwargs,
     )
 
     dspy.configure(lm=lm, adapter=BAMLAdapter())
@@ -125,9 +180,38 @@ def on_press(key) -> None:
         notify("An error occurred")
 
 
-def run() -> None:
+def run(
+    model: Annotated[
+        str,
+        typer.Option(
+            "--model",
+            "-m",
+            help="DSPy/LiteLLM model name, such as openai/gpt-5.4-mini.",
+        ),
+    ] = DEFAULT_MODEL,
+    max_tokens: Annotated[
+        int,
+        typer.Option(
+            "--max-tokens",
+            min=1,
+            help="Maximum output tokens requested from the model.",
+        ),
+    ] = DEFAULT_MAX_TOKENS,
+    api_key_env: Annotated[
+        str | None,
+        typer.Option(
+            "--api-key-env",
+            help="Environment variable that contains the selected model API key.",
+        ),
+    ] = None,
+) -> None:
     """Analyze visible multiple-choice questions from a macOS screenshot."""
-    configure_dspy()
+    try:
+        configure_dspy(model=model, max_tokens=max_tokens, api_key_env=api_key_env)
+    except RuntimeError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
     print("Listening for left Alt keypresses...")
     notify("CLI started")
 
