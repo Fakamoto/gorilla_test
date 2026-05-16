@@ -20,3 +20,5 @@
 - Added a README image showing the left Mac `option` / `alt` key.
 - Copied the article images into this repo and changed `blog.md` to use local
   asset paths.
+- Replaced the generated keyboard illustration with an edited real MacBook
+  keyboard photo and added source attribution.

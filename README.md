@@ -79,6 +79,12 @@ On a Mac keyboard, the left Alt key is the left `option` / `alt` key:
 
 ![Mac keyboard with the left option alt key circled](assets/left-alt-key.png)
 
+Image adapted from
+[MacBook option key.JPG](https://commons.wikimedia.org/wiki/File:MacBook_option_key.JPG)
+by Gerolsteiner91, licensed under
+[CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/). Modified with
+a red circle around the left `option` / `alt` key.
+
 Choose a different model:
 
 ```bash
