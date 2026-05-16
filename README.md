@@ -1,59 +1,122 @@
-# Gorilla Test Assistant 🦍
+# Gorilla Test Assistant
 
-This project is a small macOS proof of concept for screenshot-based multiple-choice analysis. It was built to show how traditional assessment formats can break down in the age of multimodal AI.
+Small macOS CLI that listens for a left Alt keypress, captures the current
+screen, and asks a multimodal DSPy program to answer the visible multiple-choice
+question.
 
-## Background
+For background on why this project exists, read
+[Pass any TestGorilla Assessment](https://blog.fgoiriz.com/posts/testgorilla/).
 
-For context on why this project was created, read the blog post: [Pass any TestGorilla Assessment 🦍](https://blog.fgoiriz.com/posts/testgorilla/).
+## Install
 
-## Features
+The package name is `gorilla-test-assistant` and it installs the `gorilla-test`
+command.
 
-- Captures the screen on a left Alt keypress
-- Analyzes visible multiple-choice questions with DSPy and `gpt-5.4-mini`
-- Returns structured answers with concise reasoning
-- Sends macOS notifications with `pync`
-- Uses inline `uv` script dependencies in `main.py`
+With `uv`:
 
-## Setup
+```bash
+uv tool install gorilla-test-assistant
+```
 
-1. Install `uv`.
+With `pip`:
 
-   On macOS, Homebrew is the simplest option:
+```bash
+pip install gorilla-test-assistant
+```
 
-   ```bash
-   brew install uv
-   ```
+This project supports Python `>=3.11,<3.12` because the keyboard listener stack
+is known to be safest on Python 3.11.
 
-2. Clone the repository:
+## API Keys
 
-   ```bash
-   git clone git@github.com:Fakamoto/gorilla_test.git
-   cd gorilla_test
-   ```
+The default model is `openai/gpt-5.4-mini`, so the default setup is:
 
-3. Set your OpenAI API key:
+```bash
+export OPENAI_API_KEY="your-api-key"
+```
 
-   ```bash
-   export OPENAI_API_KEY="your-api-key-here"
-   ```
+The CLI accepts any DSPy/LiteLLM-style model name through `--model`. For common
+providers, set the standard provider environment variable:
+
+| Provider prefix | Environment variable |
+| --- | --- |
+| `openai/` | `OPENAI_API_KEY` |
+| `anthropic/` | `ANTHROPIC_API_KEY` |
+| `gemini/` or `google/` | `GEMINI_API_KEY` or `GOOGLE_API_KEY` |
+| `groq/` | `GROQ_API_KEY` |
+| `mistral/` | `MISTRAL_API_KEY` |
+| `openrouter/` | `OPENROUTER_API_KEY` |
+| `together/` | `TOGETHER_API_KEY` |
+| `xai/` | `XAI_API_KEY` |
+
+For another provider, point the CLI at the variable name:
+
+```bash
+gorilla-test --model provider/model-name --api-key-env PROVIDER_API_KEY
+```
 
 ## Usage
 
-Run the script with `uv`:
+Start the listener:
 
 ```bash
-uv run main.py
+gorilla-test
 ```
 
-When a multiple-choice question is visible, press the left Alt key and wait for the notification with the suggested answer.
+When a multiple-choice question is visible, press the left Alt key. The CLI
+prints the structured answer and sends a macOS notification with the selected
+option number.
+
+Choose a different model:
+
+```bash
+gorilla-test --model openai/gpt-5.4
+```
+
+Change the output token budget:
+
+```bash
+gorilla-test --max-tokens 8192
+```
+
+Show all options:
+
+```bash
+gorilla-test --help
+```
+
+## Local Development
+
+Run the CLI from this checkout without installing it globally:
+
+```bash
+uv run --python 3.11.6 --with . gorilla-test --help
+```
+
+Build the package:
+
+```bash
+uv build
+```
+
+Publish to PyPI with a token:
+
+```bash
+export UV_PUBLISH_TOKEN="pypi-..."
+uv publish
+```
 
 ## Notes
 
-- This is designed for macOS.
-- `uv` reads the dependencies directly from `main.py`, so there is no `requirements.txt`.
-- The model is configured in `main.py` as `openai/gpt-5.4-mini`.
-- Use responsibly and respect the terms of service for any platform involved.
+- The tool is designed for macOS.
+- macOS may require Accessibility and Screen Recording permissions for the
+  terminal app running the CLI.
+- DSPy uses `ChainOfThought`, so reasoning is produced by the program instead of
+  being modeled as a manual Pydantic output field.
+- Reasoning effort defaults to `high`.
+- The default max token budget is `8192`.
 
 ## Disclaimer
 
-This project is meant to highlight the need for more advanced and relevant assessment methods in tech hiring. It should not be used to gain unfair advantages in actual assessments.
+This project highlights the need for better assessment methods in tech hiring.
+Use it responsibly and respect the terms of service for any platform involved.
