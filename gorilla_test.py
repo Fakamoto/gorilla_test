@@ -14,8 +14,8 @@ import typer
 
 APP_NAME: Final = "Gorilla Test Assistant"
 DEFAULT_MODEL: Final = "openai/gpt-5.4-mini"
-DEFAULT_MAX_TOKENS: Final = 4096
-REASONING_EFFORT: Final = "low"
+DEFAULT_MAX_TOKENS: Final = 8192
+REASONING_EFFORT: Final = "high"
 VERBOSITY: Final = "low"
 
 API_KEY_ENV_BY_PROVIDER: Final[dict[str, tuple[str, ...]]] = {
